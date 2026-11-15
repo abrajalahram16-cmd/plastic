@@ -6,8 +6,8 @@
 <title>معمل البلاستيك</title>
 <meta name="theme-color" content="#1c3d7a">
 <link rel="manifest" href="manifest.json">
-<link rel="icon" href="icons/icon-192.png" type="image/png">
-<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" href="logo.png" type="image/png">
+<link rel="apple-touch-icon" href="logo.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
@@ -241,6 +241,17 @@ main{padding-bottom:40px}
 .m-grid input,.m-grid select,.m-grid textarea{width:100%;margin:0}
 .m-actions{display:flex;gap:8px;margin-top:14px}
 .m-actions .btn{flex:1}
+
+/* ---- Drawer: phone edit, install ---- */
+.phone-box{display:flex;align-items:center;gap:8px}
+.mini-btn{background:none;border:1px solid var(--navy);color:var(--navy);border-radius:10px;padding:4px 10px;font-weight:700;font-size:13px;cursor:pointer;font-family:inherit}
+#phoneForm{display:flex;gap:8px;margin:10px 0 4px}
+#phoneForm input{flex:1;min-width:0}
+#installBtn{margin-bottom:10px}
+.hint{font-size:13px;color:var(--muted);line-height:1.7;margin:0 0 10px}
+.md-check-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px 12px;border:1px solid var(--border);border-radius:12px;padding:10px;background:#fafcff}
+.md-check-grid label{display:flex;align-items:center;gap:8px;font-size:14px;margin:0;cursor:pointer}
+.md-check-grid input{width:18px;height:18px;margin:0}
 </style>
 </head>
 <body>
@@ -293,8 +304,17 @@ main{padding-bottom:40px}
     </div>
     <div class="drawer-name" id="userName"></div>
     <div class="drawer-rows">
-      <div class="row"><span>رقم الهاتف</span><b id="drawerPhone"></b></div>
+      <div class="row"><span>رقم الهاتف</span>
+        <div class="phone-box"><b id="drawerPhone"></b><button id="phoneEdit" class="mini-btn" type="button">تعديل</button></div>
+      </div>
     </div>
+    <div id="phoneForm" class="hidden">
+      <input id="phoneInput" inputmode="tel" placeholder="مثال: 07xxxxxxxxx" autocomplete="tel">
+      <button id="phoneSave" class="btn btn-primary" type="button">حفظ</button>
+    </div>
+    <div id="phoneMsg" class="msg"></div>
+    <button id="installBtn" class="btn btn-primary hidden" type="button">تثبيت التطبيق على الجهاز</button>
+    <p id="iosHint" class="hint hidden">على iPhone: اضغطي زر المشاركة ثم اختاري "إضافة إلى الشاشة الرئيسية".</p>
     <button id="notifyBtn" class="btn btn-gold" type="button">تفعيل الإشعارات</button>
     <div class="menu-title">الأقسام</div>
     <nav id="menuList" class="menu-list" aria-label="الأقسام"></nav>
@@ -487,6 +507,7 @@ function renderPageBody(meta) {
   if (meta.id === 'home') { renderHome(); return; }
   if (meta.id === 'users') { renderUsers(); return; }
   if (meta.id === 'machines') { renderMachines(); return; }
+  if (meta.id === 'molds') { renderMolds(); return; }
   if (ASSET[meta.id]) { renderAssets(meta.id); return; }
   if (meta.id === 'production') { renderProduction(); return; }
   if (meta.id === 'workers') { renderWorkers(); return; }
@@ -967,6 +988,201 @@ async function deleteMachine(id) {
   const { error } = await sb.from('machines').delete().eq('id', id);
   if (error) { alert('تعذّر الحذف: ' + error.message); return; }
   loadMachineList();
+}
+
+/* ===== 6b-3. Molds page: cards + add/edit window (stage 11) ===== */
+const MOLD_STATUS = ['جاهز', 'قيد الصيانة', 'متوقف'];
+const MOLD_STATUS_CLASS = { 'جاهز': 'st-run', 'قيد الصيانة': 'st-maint', 'متوقف': 'st-stop' };
+const MOLD_CLASS = ['غير مصنف', 'مصنف'];
+
+function renderMolds() {
+  const main = document.getElementById('page');
+  main.innerHTML =
+    '<div class="page-title">القوالب</div>' +
+    (canEdit() ? '<div class="mc-add-row"><button id="mdAdd" class="btn btn-primary" type="button">+ إضافة قالب</button></div>' : '') +
+    '<div id="mdList"><div class="loading">جاري التحميل...</div></div>' +
+    '<div id="mdModal" class="m-bg" role="dialog" aria-modal="true" aria-hidden="true"></div>';
+  const add = document.getElementById('mdAdd');
+  if (add) add.addEventListener('click', () => openMoldModal(null));
+  loadMoldList();
+}
+
+async function loadMoldList() {
+  const list = document.getElementById('mdList');
+  if (!list) return;
+  const [mRes, mcRes] = await Promise.all([
+    sb.from('molds').select('*').order('created_at', { ascending: false }),
+    sb.from('machines').select('id,name,machine_no'),
+  ]);
+  if (mRes.error) { list.innerHTML = `<div class="card"><p>تعذّر التحميل: ${esc(mRes.error.message)}</p></div>`; return; }
+  if (!mRes.data.length) { list.innerHTML = '<div class="empty">لا توجد قوالب بعد.</div>'; return; }
+
+  const machineName = Object.fromEntries((mcRes.data || []).map(x => [x.id, x.name]));
+  const rows = mRes.data;
+  list.innerHTML = `<div class="mc-list">${rows.map(m => moldCardHTML(m, machineName)).join('')}</div>`;
+  list.querySelectorAll('[data-edit]').forEach(b =>
+    b.addEventListener('click', () => openMoldModal(rows.find(x => x.id === b.dataset.edit))));
+  list.querySelectorAll('[data-del]').forEach(b =>
+    b.addEventListener('click', () => deleteMold(b.dataset.del)));
+}
+
+function moldCardHTML(m, machineName) {
+  const photo = m.photo_url
+    ? `<img src="${esc(m.photo_url)}" alt="" loading="lazy">`
+    : '<span>لا توجد صورة</span>';
+  const st = m.status || 'جاهز';
+  const names = (m.machine_ids || []).map(id => machineName[id]).filter(Boolean);
+  const meta = [
+    ['نوع القطعة', m.part_type || '—'],
+    ['اسم القطعة', m.part_name || '—'],
+    ['الموديل', m.model || '—'],
+    ['التصنيف', m.classification || '—'],
+    ['عدد التجاويف', m.cavities != null ? m.cavities : '—'],
+    ['القطع لكل دورة', m.parts_per_cycle != null ? m.parts_per_cycle : '—'],
+  ];
+  return `<div class="mc">
+    <div class="mc-photo">${photo}${canEdit()
+      ? `<button class="mc-edit" type="button" data-edit="${esc(m.id)}">تعديل</button>` : ''}</div>
+    <span class="mc-status ${MOLD_STATUS_CLASS[st] || 'st-stop'}">● ${esc(st)}</span>
+    <div class="mc-name">${esc(m.name)}</div>
+    <div class="mc-no">${esc(m.mold_no || '')}</div>
+    <div class="mc-meta">${meta.map(([l, x]) => `<div><span>${l}</span>${esc(x)}</div>`).join('')}</div>
+    <div class="mc-notes"><b>المكائن المتوافقة:</b> ${names.length ? esc(names.join('، ')) : '—'}</div>
+    ${canEdit() ? `<button class="mc-del" type="button" data-del="${esc(m.id)}">حذف</button>` : ''}
+  </div>`;
+}
+
+function moldFormHTML(m, machines) {
+  const v = k => esc(m && m[k] != null ? m[k] : '');
+  const opts = (list, cur) => list.map(x => `<option value="${esc(x)}"${x === cur ? ' selected' : ''}>${esc(x)}</option>`).join('');
+  const checks = machines.length
+    ? machines.map(x => `<label><input type="checkbox" class="md-mach" value="${esc(x.id)}"${m && (m.machine_ids || []).includes(x.id) ? ' checked' : ''}> ${esc(x.name)} — ${esc(x.machine_no || '')}</label>`).join('')
+    : '<span class="hint">ما في مكائن بعد. أضيفيها من قسم المكائن.</span>';
+  return `<div class="m-panel">
+    <div class="m-head"><h3>${m ? 'تعديل قالب' : 'إضافة قالب'}</h3>
+      <button type="button" class="m-x" data-close aria-label="إغلاق">×</button></div>
+    <form id="mdForm">
+      <label class="m-drop" for="mdPhoto" id="mdDrop">
+        ${m && m.photo_url ? `<img src="${esc(m.photo_url)}" alt="">` : '<span>+ أضيفي صورة القالب</span>'}
+        <input id="mdPhoto" type="file" accept="image/*">
+      </label>
+      <div class="m-grid">
+        <div><label for="mdNo">رقم القالب *</label><input id="mdNo" value="${v('mold_no')}" required></div>
+        <div><label for="mdName">اسم القالب *</label><input id="mdName" value="${v('name')}" required maxlength="120"></div>
+        <div><label for="mdPart">اسم القطعة</label><input id="mdPart" value="${v('part_name')}"></div>
+        <div><label for="mdPartType">نوع القطعة</label><input id="mdPartType" value="${v('part_type')}"></div>
+        <div><label for="mdModel">الموديل</label><input id="mdModel" value="${v('model')}"></div>
+        <div><label for="mdClass">التصنيف</label><select id="mdClass">${opts(MOLD_CLASS, m ? m.classification : 'غير مصنف')}</select></div>
+        <div><label for="mdCav">عدد التجاويف</label><input id="mdCav" inputmode="numeric" value="${m && m.cavities != null ? esc(m.cavities) : ''}"></div>
+        <div><label for="mdPpc">القطع لكل دورة</label><input id="mdPpc" inputmode="numeric" value="${m && m.parts_per_cycle != null ? esc(m.parts_per_cycle) : ''}"></div>
+        <div class="full"><label for="mdStatus">الحالة</label><select id="mdStatus">${opts(MOLD_STATUS, m ? m.status : 'جاهز')}</select></div>
+        <div class="full"><label>المكائن المتوافقة</label><div class="md-check-grid">${checks}</div></div>
+      </div>
+      <div id="mdMsg" class="msg"></div>
+      <div class="m-actions">
+        <button id="mdSave" class="btn btn-primary" type="submit">حفظ</button>
+        <button type="button" class="btn" data-close>إلغاء</button>
+      </div>
+    </form>
+  </div>`;
+}
+
+async function openMoldModal(m) {
+  const bg = document.getElementById('mdModal');
+  const { data } = await sb.from('machines').select('id,name,machine_no').order('machine_no');
+  bg.innerHTML = moldFormHTML(m, data || []);
+  bg.classList.add('open');
+  bg.setAttribute('aria-hidden', 'false');
+  bg.querySelectorAll('[data-close]').forEach(b => b.addEventListener('click', closeMoldModal));
+  bg.addEventListener('click', e => { if (e.target === bg) closeMoldModal(); });
+  document.getElementById('mdForm').addEventListener('submit', e => saveMold(e, m));
+  document.getElementById('mdPhoto').addEventListener('change', e => {
+    const f = e.target.files[0];
+    if (!f) return;
+    const img = document.createElement('img');
+    img.alt = '';
+    img.src = URL.createObjectURL(f);
+    const drop = document.getElementById('mdDrop');
+    drop.querySelectorAll('span,img').forEach(x => x.remove());
+    drop.insertBefore(img, drop.querySelector('input'));
+  });
+}
+
+function closeMoldModal() {
+  const bg = document.getElementById('mdModal');
+  if (!bg) return;
+  bg.classList.remove('open');
+  bg.setAttribute('aria-hidden', 'true');
+  bg.innerHTML = '';
+}
+
+async function saveMold(e, existing) {
+  e.preventDefault();
+  const btn = document.getElementById('mdSave');
+  const msg = document.getElementById('mdMsg');
+  const val = id => document.getElementById(id).value.trim();
+  const moldNo = toEnDigits(val('mdNo'));
+  const name = val('mdName');
+  const file = document.getElementById('mdPhoto').files[0];
+  setMsg(msg, '', '');
+
+  if (!moldNo || !name) { setMsg(msg, 'اكتبي رقم القالب واسمه'); return; }
+
+  const cavRaw = toEnDigits(val('mdCav'));
+  const ppcRaw = toEnDigits(val('mdPpc'));
+  const cav = cavRaw ? parseInt(cavRaw, 10) : null;
+  const ppc = ppcRaw ? parseInt(ppcRaw, 10) : null;
+  if ((cavRaw && !(cav > 0)) || (ppcRaw && !(ppc > 0))) { setMsg(msg, 'عدد التجاويف والقطع لكل دورة لازم تكون أرقام أكبر من صفر'); return; }
+
+  if (file && file.size > MAX_PHOTO_MB * 1024 * 1024) { setMsg(msg, `الصورة أكبر من ${MAX_PHOTO_MB} ميغا`); return; }
+
+  const machineIds = [...document.querySelectorAll('.md-mach:checked')].map(c => c.value);
+
+  btn.disabled = true; btn.textContent = 'جاري الحفظ...';
+  try {
+    let photo_url = existing ? existing.photo_url : null;
+    if (file) {
+      const ext = ((file.name.split('.').pop() || 'jpg').toLowerCase().replace(/[^a-z0-9]/g, '')) || 'jpg';
+      const path = `molds/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+      const up = await sb.storage.from(BUCKET).upload(path, file, { contentType: file.type });
+      if (up.error) throw up.error;
+      photo_url = sb.storage.from(BUCKET).getPublicUrl(path).data.publicUrl;
+    }
+
+    const row = {
+      mold_no: moldNo,
+      name,
+      part_name: val('mdPart'),
+      part_type: val('mdPartType'),
+      model: val('mdModel'),
+      classification: val('mdClass') || 'غير مصنف',
+      cavities: cav,
+      parts_per_cycle: ppc,
+      status: val('mdStatus') || 'جاهز',
+      machine_ids: machineIds,
+      photo_url,
+    };
+
+    const res = existing
+      ? await sb.from('molds').update(row).eq('id', existing.id)
+      : await sb.from('molds').insert(row);
+    if (res.error) throw res.error;
+
+    closeMoldModal();
+    loadMoldList();
+  } catch (err) {
+    const dup = err && err.code === '23505';
+    setMsg(msg, dup ? 'رقم القالب هذا مستعمل لقالب ثاني' : ('تعذّر الحفظ: ' + (err.message || err)));
+  } finally {
+    btn.disabled = false; btn.textContent = 'حفظ';
+  }
+}
+
+async function deleteMold(id) {
+  if (!confirm('متأكدة تبين تحذفين هذا القالب؟')) return;
+  const { error } = await sb.from('molds').delete().eq('id', id);
+  if (error) { alert('تعذّر الحذف: ' + error.message); return; }
+  loadMoldList();
 }
 
 /* ===== 6c. Daily production with three shifts (stage 3) ===== */
@@ -1832,6 +2048,45 @@ function notifyStaff(title, body) {
   sb.functions.invoke('notify', { body: { title, body, url: './' } }).catch(() => {});
 }
 document.getElementById('notifyBtn').addEventListener('click', enableNotifications);
+
+/* ---- Drawer: edit own phone number ---- */
+document.getElementById('phoneEdit').addEventListener('click', () => {
+  const form = document.getElementById('phoneForm');
+  form.classList.toggle('hidden');
+  document.getElementById('phoneInput').value = (state.profile && state.profile.phone) || '';
+  setMsg(document.getElementById('phoneMsg'), '', '');
+});
+document.getElementById('phoneSave').addEventListener('click', async () => {
+  const msg = document.getElementById('phoneMsg');
+  const phone = toEnDigits(document.getElementById('phoneInput').value).replace(/[\s-]/g, '');
+  if (phone && !/^\+?\d{6,20}$/.test(phone)) { setMsg(msg, 'اكتبي رقم هاتف صحيح'); return; }
+  const { error } = await sb.rpc('update_my_phone', { p_phone: phone });
+  if (error) { setMsg(msg, 'تعذّر الحفظ: ' + error.message); return; }
+  state.profile.phone = phone;
+  document.getElementById('drawerPhone').textContent = phone || '—';
+  document.getElementById('phoneForm').classList.add('hidden');
+  setMsg(msg, 'تم حفظ رقم الهاتف', 'ok');
+});
+
+/* ---- Install the app from the browser ---- */
+let deferredInstall = null;
+const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+const isIos = /iphone|ipad|ipod/i.test(navigator.userAgent);
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  deferredInstall = e;
+  show('installBtn', true);
+});
+document.getElementById('installBtn').addEventListener('click', async () => {
+  if (!deferredInstall) return;
+  deferredInstall.prompt();
+  await deferredInstall.userChoice;
+  deferredInstall = null;
+  show('installBtn', false);
+});
+window.addEventListener('appinstalled', () => { show('installBtn', false); show('iosHint', false); });
+if (!isStandalone && isIos) show('iosHint', true);
+
 refreshNotifyBtn();
 
 /* ===== 6f. Side menu ===== */

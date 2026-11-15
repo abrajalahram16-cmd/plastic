@@ -1,14 +1,20 @@
-// Service worker: shows push notifications and opens the app when they are tapped.
+// Service worker: makes the app installable, shows push notifications and opens the app when they are tapped.
 self.addEventListener('install', () => self.skipWaiting());
 self.addEventListener('activate', event => event.waitUntil(self.clients.claim()));
+
+// Network first; the app needs live data from Supabase, so nothing is cached here.
+self.addEventListener('fetch', event => {
+  if (event.request.method !== 'GET') return;
+  event.respondWith(fetch(event.request));
+});
 
 self.addEventListener('push', event => {
   let data = { title: 'معمل البلاستيك', body: '' };
   try { data = { ...data, ...event.data.json() }; } catch (_) { /* plain text or empty push */ }
   event.waitUntil(self.registration.showNotification(data.title, {
     body: data.body,
-    icon: 'icons/icon-192.png',
-    badge: 'icons/icon-192.png',
+    icon: 'logo.png',
+    badge: 'logo.png',
     tag: 'plastic-' + Date.now(),
     dir: 'rtl',
     lang: 'ar',
