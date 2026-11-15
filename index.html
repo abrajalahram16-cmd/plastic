@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>معمل البلاستيك</title>
+<title>مصنع البلاستيك</title>
 <meta name="theme-color" content="#1c3d7a">
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="logo.png" type="image/png">
@@ -257,15 +257,19 @@ input[type="date"]{direction:ltr;text-align:left;unicode-bidi:isolate}
 /* Chinese: use a CJK font for all text */
 html[lang="zh-CN"] body, html[lang="zh-CN"] input, html[lang="zh-CN"] button,
 html[lang="zh-CN"] select, html[lang="zh-CN"] textarea {font-family:'Noto Sans SC','Microsoft YaHei',system-ui,sans-serif}
+/* Small language button */
+.lang-mini{height:34px;padding:0 12px;border-radius:999px;border:1px solid var(--navy);background:#fff;color:var(--navy);font-weight:700;font-size:13px;cursor:pointer;font-family:inherit;margin-inline-start:auto;flex:0 0 auto}
+.lang-login{display:block;margin:0 auto 12px}
 </style>
 </head>
 <body>
 
 <!-- Login screen -->
 <div id="loginView" class="login-wrap hidden">
+  <button id="langLogin" class="lang-mini lang-login" type="button"></button>
   <div class="login-card">
     <img class="login-logo" src="logo.png" alt="أبراج الأهرام">
-    <h1>معمل البلاستيك</h1>
+    <h1>مصنع البلاستيك</h1>
     <div class="sub" id="authSub">سجّل دخولك للمتابعة</div>
     <form id="loginForm">
       <div id="signupName" class="hidden">
@@ -298,7 +302,8 @@ html[lang="zh-CN"] select, html[lang="zh-CN"] textarea {font-family:'Noto Sans S
       <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
     </button>
     <div class="brand"><img class="brand-logo" src="logo.png" alt="أبراج الأهرام">
-      <div>معمل البلاستيك</div></div>
+      <div>مصنع البلاستيك</div></div>
+    <button id="langTop" class="lang-mini" type="button"></button>
   </header>
 
   <div id="overlay" class="overlay"></div>
@@ -308,22 +313,11 @@ html[lang="zh-CN"] select, html[lang="zh-CN"] textarea {font-family:'Noto Sans S
       <button id="closeMenuBtn" class="close-btn" type="button" aria-label="إغلاق">✕</button>
     </div>
     <div class="drawer-name" id="userName"></div>
-    <div class="drawer-rows">
-      <div class="row"><span>رقم الهاتف</span>
-        <div class="phone-box"><b id="drawerPhone"></b><button id="phoneEdit" class="mini-btn" type="button">تعديل</button></div>
-      </div>
-    </div>
-    <div id="phoneForm" class="hidden">
-      <input id="phoneInput" inputmode="tel" placeholder="مثال: 07xxxxxxxxx" autocomplete="tel">
-      <button id="phoneSave" class="btn btn-primary" type="button">حفظ</button>
-    </div>
-    <div id="phoneMsg" class="msg"></div>
     <button id="installBtn" class="btn btn-primary hidden" type="button">تثبيت التطبيق على الجهاز</button>
     <p id="iosHint" class="hint hidden">على iPhone: اضغطي زر المشاركة ثم اختاري "إضافة إلى الشاشة الرئيسية".</p>
     <button id="notifyBtn" class="btn btn-gold" type="button">تفعيل الإشعارات</button>
     <div class="menu-title">الأقسام</div>
     <nav id="menuList" class="menu-list" aria-label="الأقسام"></nav>
-    <button id="langBtn" class="btn" type="button"></button>
     <button id="logoutBtn" class="btn logout-btn" type="button">تسجيل خروج</button>
   </aside>
   <main id="page"></main>
@@ -390,7 +384,7 @@ if (LANG === 'zh') {
 }
 
 const ZH = {
-  'معمل البلاستيك': '塑料工厂',
+  'مصنع البلاستيك': '塑料工厂',
   'سجّل دخولك للمتابعة': '请登录以继续',
   'أنشئي حسابك ثم انتظري تفعيل المدير': '创建账户后请等待管理员激活',
   'الاسم الكامل': '全名', 'رقم الهاتف': '电话号码', 'البريد الإلكتروني': '电子邮箱',
@@ -677,7 +671,6 @@ async function startSession(session) {
   state.profile = profile;
   show('loadingView', false); show('appView', true);
   document.getElementById('userName').textContent = profile.full_name || '—';
-  document.getElementById('drawerPhone').textContent = profile.phone || '—';
   document.getElementById('avatar').textContent = (profile.full_name || '؟').charAt(0);
   renderShell();
 }
@@ -2231,31 +2224,13 @@ function notifyStaff(title, body) {
 }
 document.getElementById('notifyBtn').addEventListener('click', enableNotifications);
 
-/* ---- Language switch: reloads the page in the other language ---- */
-const langBtn = document.getElementById('langBtn');
-langBtn.textContent = LANG === 'zh' ? 'العربية' : '中文';
-langBtn.addEventListener('click', () => {
-  try { localStorage.setItem('lang', LANG === 'zh' ? 'ar' : 'zh'); } catch (_) { /* private mode */ }
-  location.reload();
-});
-
-/* ---- Drawer: edit own phone number ---- */
-document.getElementById('phoneEdit').addEventListener('click', () => {
-  const form = document.getElementById('phoneForm');
-  form.classList.toggle('hidden');
-  document.getElementById('phoneInput').value = (state.profile && state.profile.phone) || '';
-  setMsg(document.getElementById('phoneMsg'), '', '');
-});
-document.getElementById('phoneSave').addEventListener('click', async () => {
-  const msg = document.getElementById('phoneMsg');
-  const phone = toEnDigits(document.getElementById('phoneInput').value).replace(/[\s-]/g, '');
-  if (phone && !/^\+?\d{6,20}$/.test(phone)) { setMsg(msg, 'اكتبي رقم هاتف صحيح'); return; }
-  const { error } = await sb.rpc('update_my_phone', { p_phone: phone });
-  if (error) { setMsg(msg, 'تعذّر الحفظ: ' + error.message); return; }
-  state.profile.phone = phone;
-  document.getElementById('drawerPhone').textContent = phone || '—';
-  document.getElementById('phoneForm').classList.add('hidden');
-  setMsg(msg, 'تم حفظ رقم الهاتف', 'ok');
+/* ---- Language switch (small button in the top bar and on the login screen) ---- */
+document.querySelectorAll('#langTop, #langLogin').forEach(btn => {
+  btn.textContent = LANG === 'zh' ? 'العربية' : '中文';
+  btn.addEventListener('click', () => {
+    try { localStorage.setItem('lang', LANG === 'zh' ? 'ar' : 'zh'); } catch (_) { /* private mode */ }
+    location.reload();
+  });
 });
 
 /* ---- Install the app from the browser ---- */

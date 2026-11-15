@@ -9,7 +9,7 @@ self.addEventListener('fetch', event => {
 });
 
 self.addEventListener('push', event => {
-  let data = { title: 'معمل البلاستيك', body: '' };
+  let data = { title: 'مصنع البلاستيك', body: '' };
   try { data = { ...data, ...event.data.json() }; } catch (_) { /* plain text or empty push */ }
   event.waitUntil(self.registration.showNotification(data.title, {
     body: data.body,
