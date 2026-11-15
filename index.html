@@ -206,6 +206,41 @@ main{padding-bottom:40px}
 .mix-cols .btn{font-size:13px;padding:8px 10px;width:100%}
 .mixRow{background:#faf6f8;border-radius:16px;padding:12px;margin-top:10px;display:flex;flex-direction:column;gap:8px}
 .rowTotal{font-size:13px;font-weight:700;color:var(--navy)}
+
+/* ---- Machines page (cards + add/edit window) ---- */
+.mc-add-row{display:flex;justify-content:flex-start;margin-bottom:12px}
+.mc-add-row .btn{width:auto;padding:0 22px}
+.mc-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:14px}
+.mc{background:#fff;border-radius:18px;box-shadow:0 6px 18px rgba(20,44,92,.08);border:1px solid var(--border);padding:12px;display:flex;flex-direction:column}
+.mc-photo{position:relative;height:190px;border-radius:12px;overflow:hidden;background:#eef3fb;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:14px}
+.mc-photo img{width:100%;height:100%;object-fit:cover;display:block}
+.mc-edit{position:absolute;top:10px;left:10px;background:#fff;border:0;border-radius:10px;padding:6px 12px;font-weight:700;color:var(--navy);cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.15);font-family:inherit}
+.mc-status{align-self:flex-start;display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:4px 12px;font-size:13px;font-weight:700;margin:12px 0 4px}
+.st-run{background:#dff7e8;color:#17794a}
+.st-stop{background:#eceff5;color:#5b6478}
+.st-maint{background:#fff1d6;color:#9a6200}
+.mc-name{font-size:20px;font-weight:800;color:var(--navy);text-align:right;line-height:1.3}
+.mc-no{color:var(--muted);font-size:13px;margin-bottom:8px}
+.mc-meta{display:grid;grid-template-columns:1fr 1fr;gap:8px 12px;font-size:14px;color:var(--text,#1d2433)}
+.mc-meta span{display:block;color:var(--muted);font-size:12px}
+.mc-notes{margin-top:10px;font-size:13px;color:var(--muted);line-height:1.6}
+.mc-del{margin-top:auto;padding-top:12px}
+.mc-del button,.mc-del{background:var(--red-light,#fdecec);color:var(--red,#c0392b);border:0;border-radius:10px;padding:10px;width:100%;font-weight:700;cursor:pointer;font-family:inherit;margin-top:12px}
+.m-bg{position:fixed;inset:0;background:rgba(10,20,40,.55);display:none;align-items:flex-start;justify-content:center;z-index:60;overflow-y:auto;padding:16px}
+.m-bg.open{display:flex}
+.m-panel{background:#fff;border-radius:18px;width:100%;max-width:560px;padding:18px;margin:auto;box-shadow:0 20px 50px rgba(0,0,0,.25)}
+.m-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.m-head h3{color:var(--navy);font-size:18px}
+.m-x{background:none;border:0;font-size:26px;line-height:1;cursor:pointer;color:var(--muted);width:44px;height:44px}
+.m-drop{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;border:2px dashed #cdd6e6;border-radius:14px;min-height:150px;margin-bottom:14px;cursor:pointer;background:#fafcff;overflow:hidden;color:var(--muted);font-size:14px}
+.m-drop img{width:100%;height:200px;object-fit:cover;display:block}
+.m-drop input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.m-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px 12px}
+.m-grid .full{grid-column:1/-1}
+.m-grid label{font-size:14px;margin:0 0 4px;display:block}
+.m-grid input,.m-grid select,.m-grid textarea{width:100%;margin:0}
+.m-actions{display:flex;gap:8px;margin-top:14px}
+.m-actions .btn{flex:1}
 </style>
 </head>
 <body>
@@ -451,6 +486,7 @@ function renderPageBody(meta) {
   const main = document.getElementById('page');
   if (meta.id === 'home') { renderHome(); return; }
   if (meta.id === 'users') { renderUsers(); return; }
+  if (meta.id === 'machines') { renderMachines(); return; }
   if (ASSET[meta.id]) { renderAssets(meta.id); return; }
   if (meta.id === 'production') { renderProduction(); return; }
   if (meta.id === 'workers') { renderWorkers(); return; }
@@ -743,6 +779,194 @@ async function deleteAsset(kind, id) {
   const { error } = await sb.from(ASSET[kind].table).delete().eq('id', id);
   if (error) { alert('تعذّر الحذف: ' + error.message); return; }
   loadAssetList(kind);
+}
+
+/* ===== 6b-2. Machines page: cards + add/edit window (stage 10) ===== */
+const MACH_STATUS = ['تعمل', 'متوقفة', 'صيانة'];
+const STATUS_CLASS = { 'تعمل': 'st-run', 'متوقفة': 'st-stop', 'صيانة': 'st-maint' };
+
+function renderMachines() {
+  const main = document.getElementById('page');
+  main.innerHTML =
+    '<div class="page-title">المكائن</div>' +
+    (canEdit() ? '<div class="mc-add-row"><button id="mcAdd" class="btn btn-primary" type="button">+ إضافة مكينة</button></div>' : '') +
+    '<div id="mcList"><div class="loading">جاري التحميل...</div></div>' +
+    '<div id="mcModal" class="m-bg" role="dialog" aria-modal="true" aria-hidden="true"></div>';
+  const add = document.getElementById('mcAdd');
+  if (add) add.addEventListener('click', () => openMachineModal(null));
+  loadMachineList();
+}
+
+function machineFormHTML(m) {
+  const v = k => esc(m && m[k] != null ? m[k] : '');
+  const opts = (list, cur, ph) =>
+    (ph ? `<option value="">${ph}</option>` : '') +
+    list.map(x => `<option value="${esc(x)}"${x === cur ? ' selected' : ''}>${esc(x)}</option>`).join('');
+  return `<div class="m-panel">
+    <div class="m-head"><h3>${m ? 'تعديل مكينة' : 'إضافة مكينة'}</h3>
+      <button type="button" class="m-x" data-close aria-label="إغلاق">×</button></div>
+    <form id="mcForm">
+      <label class="m-drop" for="mcPhoto" id="mcDrop">
+        ${m && m.photo_url ? `<img src="${esc(m.photo_url)}" alt="">` : '<span>+ أضيفي صورة المكينة</span>'}
+        <input id="mcPhoto" type="file" accept="image/*">
+      </label>
+      <div class="m-grid">
+        <div><label for="mcNo">رقم المكينة *</label><input id="mcNo" value="${v('machine_no')}" required></div>
+        <div><label for="mcName">اسم المكينة *</label><input id="mcName" value="${v('name')}" required maxlength="120"></div>
+        <div><label for="mcModel">الموديل</label><input id="mcModel" value="${v('model')}"></div>
+        <div><label for="mcMaker">الشركة المصنعة</label><input id="mcMaker" value="${v('manufacturer')}"></div>
+        <div><label for="mcForce">قوة الحقن (طن)</label><input id="mcForce" inputmode="decimal" value="${m && m.clamp_force != null ? esc(m.clamp_force) : ''}"></div>
+        <div><label for="mcDate">تاريخ دخول الخدمة</label><input id="mcDate" type="date" lang="en" dir="ltr" value="${v('service_date')}"></div>
+        <div><label for="mcLoc">الموقع</label><input id="mcLoc" value="${v('location')}"></div>
+        <div><label for="mcOp">المشغل</label><input id="mcOp" value="${v('operator')}"></div>
+        <div class="full"><label for="mcShift">الشفت</label>
+          <select id="mcShift">${opts(SHIFTS, m ? m.shift : '', 'اختاري الشفت')}</select></div>
+        <div class="full"><label for="mcStatus">الحالة</label>
+          <select id="mcStatus">${opts(MACH_STATUS, m ? m.status : 'متوقفة', '')}</select></div>
+        <div class="full"><label for="mcNotes">ملاحظات</label>
+          <textarea id="mcNotes" rows="3">${v('details')}</textarea></div>
+      </div>
+      <div id="mcMsg" class="msg"></div>
+      <div class="m-actions">
+        <button id="mcSave" class="btn btn-primary" type="submit">حفظ</button>
+        <button type="button" class="btn" data-close>إلغاء</button>
+      </div>
+    </form>
+  </div>`;
+}
+
+function openMachineModal(m) {
+  const bg = document.getElementById('mcModal');
+  bg.innerHTML = machineFormHTML(m);
+  bg.classList.add('open');
+  bg.setAttribute('aria-hidden', 'false');
+  bg.querySelectorAll('[data-close]').forEach(b => b.addEventListener('click', closeMachineModal));
+  bg.addEventListener('click', e => { if (e.target === bg) closeMachineModal(); });
+  document.getElementById('mcForm').addEventListener('submit', e => saveMachine(e, m));
+  document.getElementById('mcPhoto').addEventListener('change', e => {
+    const f = e.target.files[0];
+    if (!f) return;
+    const img = document.createElement('img');
+    img.alt = '';
+    img.src = URL.createObjectURL(f);
+    const drop = document.getElementById('mcDrop');
+    drop.querySelectorAll('span,img').forEach(x => x.remove());
+    drop.insertBefore(img, drop.querySelector('input'));
+  });
+}
+
+function closeMachineModal() {
+  const bg = document.getElementById('mcModal');
+  if (!bg) return;
+  bg.classList.remove('open');
+  bg.setAttribute('aria-hidden', 'true');
+  bg.innerHTML = '';
+}
+
+async function saveMachine(e, existing) {
+  e.preventDefault();
+  const btn = document.getElementById('mcSave');
+  const msg = document.getElementById('mcMsg');
+  const val = id => document.getElementById(id).value.trim();
+  const machineNo = toEnDigits(val('mcNo'));
+  const name = val('mcName');
+  const file = document.getElementById('mcPhoto').files[0];
+  setMsg(msg, '', '');
+
+  if (!machineNo || !name) { setMsg(msg, 'اكتبي رقم المكينة واسمها'); return; }
+
+  const forceRaw = toEnDigits(val('mcForce')).replace(',', '.');
+  const clamp = forceRaw ? Number(forceRaw) : null;
+  if (forceRaw && !Number.isFinite(clamp)) { setMsg(msg, 'قوة الحقن لازم تكون رقم'); return; }
+
+  if (file && file.size > MAX_PHOTO_MB * 1024 * 1024) { setMsg(msg, `الصورة أكبر من ${MAX_PHOTO_MB} ميغا`); return; }
+
+  btn.disabled = true; btn.textContent = 'جاري الحفظ...';
+  try {
+    let photo_url = existing ? existing.photo_url : null;
+    if (file) {
+      const ext = ((file.name.split('.').pop() || 'jpg').toLowerCase().replace(/[^a-z0-9]/g, '')) || 'jpg';
+      const path = `machines/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+      const up = await sb.storage.from(BUCKET).upload(path, file, { contentType: file.type });
+      if (up.error) throw up.error;
+      photo_url = sb.storage.from(BUCKET).getPublicUrl(path).data.publicUrl;
+    }
+
+    const row = {
+      machine_no: machineNo,
+      name,
+      model: val('mcModel'),
+      manufacturer: val('mcMaker'),
+      clamp_force: clamp,
+      service_date: val('mcDate') || null,
+      location: val('mcLoc'),
+      operator: val('mcOp'),
+      shift: val('mcShift'),
+      status: val('mcStatus') || 'متوقفة',
+      details: val('mcNotes'),
+      photo_url,
+    };
+
+    const res = existing
+      ? await sb.from('machines').update(row).eq('id', existing.id)
+      : await sb.from('machines').insert(row);
+    if (res.error) throw res.error;
+
+    closeMachineModal();
+    loadMachineList();
+  } catch (err) {
+    const dup = err && err.code === '23505';
+    setMsg(msg, dup ? 'رقم المكينة هذا مستعمل لمكينة ثانية' : ('تعذّر الحفظ: ' + (err.message || err)));
+  } finally {
+    btn.disabled = false; btn.textContent = 'حفظ';
+  }
+}
+
+function machineCardHTML(m) {
+  const photo = m.photo_url
+    ? `<img src="${esc(m.photo_url)}" alt="" loading="lazy">`
+    : '<span>لا توجد صورة</span>';
+  const st = m.status || 'متوقفة';
+  const meta = [
+    ['الشفت', m.shift || '—'],
+    ['المشغل', m.operator || '—'],
+    ['الموقع', m.location || '—'],
+    ['الموديل', m.model || '—'],
+    ['الشركة المصنعة', m.manufacturer || '—'],
+    ['قوة الحقن', m.clamp_force != null ? `${m.clamp_force} طن` : '—'],
+    ['دخول الخدمة', m.service_date ? fmtDate(m.service_date) : '—'],
+  ];
+  return `<div class="mc">
+    <div class="mc-photo">${photo}${canEdit()
+      ? `<button class="mc-edit" type="button" data-edit="${esc(m.id)}">تعديل</button>` : ''}</div>
+    <span class="mc-status ${STATUS_CLASS[st] || 'st-stop'}">● ${esc(st)}</span>
+    <div class="mc-name">${esc(m.name)}</div>
+    <div class="mc-no">${esc(m.machine_no || '')}</div>
+    <div class="mc-meta">${meta.map(([l, x]) => `<div><span>${l}</span>${esc(x)}</div>`).join('')}</div>
+    ${m.details ? `<p class="mc-notes">${esc(m.details)}</p>` : ''}
+    ${canEdit() ? `<button class="mc-del" type="button" data-del="${esc(m.id)}">حذف</button>` : ''}
+  </div>`;
+}
+
+async function loadMachineList() {
+  const list = document.getElementById('mcList');
+  if (!list) return;
+  const { data, error } = await sb.from('machines').select('*').order('created_at', { ascending: false });
+  if (error) { list.innerHTML = `<div class="card"><p>تعذّر التحميل: ${esc(error.message)}</p></div>`; return; }
+  if (!data.length) { list.innerHTML = '<div class="empty">لا توجد مكائن بعد.</div>'; return; }
+
+  list.innerHTML = `<div class="mc-list">${data.map(machineCardHTML).join('')}</div>`;
+  list.querySelectorAll('[data-edit]').forEach(b =>
+    b.addEventListener('click', () => openMachineModal(data.find(x => x.id === b.dataset.edit))));
+  list.querySelectorAll('[data-del]').forEach(b =>
+    b.addEventListener('click', () => deleteMachine(b.dataset.del)));
+}
+
+async function deleteMachine(id) {
+  if (!confirm('متأكدة تبين تحذفين هذي المكينة؟')) return;
+  const { error } = await sb.from('machines').delete().eq('id', id);
+  if (error) { alert('تعذّر الحذف: ' + error.message); return; }
+  loadMachineList();
 }
 
 /* ===== 6c. Daily production with three shifts (stage 3) ===== */
