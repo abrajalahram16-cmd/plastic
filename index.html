@@ -252,6 +252,11 @@ main{padding-bottom:40px}
 .md-check-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px 12px;border:1px solid var(--border);border-radius:12px;padding:10px;background:#fafcff}
 .md-check-grid label{display:flex;align-items:center;gap:8px;font-size:14px;margin:0;cursor:pointer}
 .md-check-grid input{width:18px;height:18px;margin:0}
+/* date inputs: keep day/month/year in order on RTL pages */
+input[type="date"]{direction:ltr;text-align:left;unicode-bidi:isolate}
+/* Chinese: use a CJK font for all text */
+html[lang="zh-CN"] body, html[lang="zh-CN"] input, html[lang="zh-CN"] button,
+html[lang="zh-CN"] select, html[lang="zh-CN"] textarea {font-family:'Noto Sans SC','Microsoft YaHei',system-ui,sans-serif}
 </style>
 </head>
 <body>
@@ -318,6 +323,7 @@ main{padding-bottom:40px}
     <button id="notifyBtn" class="btn btn-gold" type="button">تفعيل الإشعارات</button>
     <div class="menu-title">الأقسام</div>
     <nav id="menuList" class="menu-list" aria-label="الأقسام"></nav>
+    <button id="langBtn" class="btn" type="button"></button>
     <button id="logoutBtn" class="btn logout-btn" type="button">تسجيل خروج</button>
   </aside>
   <main id="page"></main>
@@ -370,6 +376,204 @@ const icon = id => `<svg class="ico" viewBox="0 0 24 24" aria-hidden="true">${IC
 const state = { profile: null, page: null };
 
 /* ===== 3. Helpers ===== */
+/* ===== Language: Arabic (default) or Chinese =====
+   Arabic is the source text in the code. Chinese is applied to the page by matching the exact
+   Arabic text of each label, button, message and placeholder (ZH below). */
+const LANG = (() => { try { return localStorage.getItem('lang') === 'zh' ? 'zh' : 'ar'; } catch (_) { return 'ar'; } })();
+if (LANG === 'zh') {
+  document.documentElement.lang = 'zh-CN';
+  document.documentElement.dir = 'ltr';
+  const fl = document.createElement('link');
+  fl.rel = 'stylesheet';
+  fl.href = 'https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;700;800&display=swap';
+  document.head.appendChild(fl);
+}
+
+const ZH = {
+  'معمل البلاستيك': '塑料工厂',
+  'سجّل دخولك للمتابعة': '请登录以继续',
+  'أنشئي حسابك ثم انتظري تفعيل المدير': '创建账户后请等待管理员激活',
+  'الاسم الكامل': '全名', 'رقم الهاتف': '电话号码', 'البريد الإلكتروني': '电子邮箱',
+  'كلمة المرور': '密码', 'تأكيد كلمة المرور': '确认密码', 'دخول': '登录',
+  'إنشاء الحساب': '创建账户', 'ما عندك حساب؟ أنشئي حساب جديد': '没有账户？创建新账户',
+  'عندك حساب؟ سجّلي دخولك': '已有账户？请登录',
+  'القائمة': '菜单', 'إغلاق': '关闭', 'تعديل': '编辑', 'حفظ': '保存', 'إلغاء': '取消',
+  'حذف': '删除', 'حذف السطر': '删除此行', 'إضافة': '添加', 'الأقسام': '模块',
+  'تسجيل خروج': '退出登录', 'تفعيل الإشعارات': '开启通知', 'تفعيل': '激活',
+  'تثبيت التطبيق على الجهاز': '安装应用到设备',
+  'مثال: 07xxxxxxxxx': '例如：07xxxxxxxxx',
+  'على iPhone: اضغطي زر المشاركة ثم اختاري "إضافة إلى الشاشة الرئيسية".': 'iPhone：点击分享按钮，然后选择"添加到主屏幕"。',
+  'حسابك بانتظار التفعيل': '账户等待激活',
+  'راجعي المدير حتى يفعّل حسابك ويحدد صلاحياتك. بعد التفعيل سجّلي دخولك مرة ثانية.': '请等待管理员激活您的账户并设置权限。激活后请重新登录。',
+  'خروج': '退出', 'جاري التحميل...': '加载中...', 'جاري الحفظ...': '保存中...',
+  'جاري الدخول...': '登录中...', 'جاري إنشاء الحساب...': '正在创建账户...',
+  'جاري تحميل المستخدمين...': '正在加载用户...',
+  'أهلاً بك': '欢迎', 'أهلاً': '你好',
+  'الرئيسية': '首页', 'الإنتاج اليومي': '每日生产', 'الإنتاج': '生产', 'المكائن': '机器',
+  'القوالب': '模具', 'العمال': '工人', 'الشروحات': '教程', 'حاسبة الأكياس': '袋数计算器',
+  'الخبط': '混料', 'مخزن الحبيبات': '颗粒仓库', 'المستخدمون': '用户',
+  'بانتظار التفعيل': '等待激活', 'مدير': '管理员', 'مشرف': '主管', 'عامل': '工人',
+  'تعذّر الحفظ:': '保存失败：', 'تعذّر الحذف:': '删除失败：', 'تعذّر التحديث:': '更新失败：',
+  'تعذّر تحميل الحساب:': '无法加载账户：', 'تعذّر تحميل المخزن:': '无法加载仓库：',
+  'تعذّر تحميل المكائن أو القوالب': '无法加载机器或模具', 'تعذّر:': '失败：', 'تعذّر التحميل:': '加载失败：',
+  'البريد أو كلمة المرور غير صحيحة': '邮箱或密码不正确',
+  'هذا البريد مسجّل من قبل. سجّلي دخولك.': '此邮箱已注册，请登录。',
+  'يجب أن تكون كلمة المرور 6 أحرف على الأقل': '密码至少需要6个字符',
+  'صيغة البريد غير صحيحة': '邮箱格式不正确',
+  'أدخلي اسمك الكامل': '请输入全名', 'أدخلي رقم هاتف صحيح': '请输入正确的电话号码',
+  'كلمتا المرور غير متطابقتين': '两次输入的密码不一致',
+  'تم إنشاء الحساب. أكّدي بريدك من الرسالة اللي وصلتك، ثم سجّلي دخولك.': '账户已创建。请确认邮件后再登录。',
+  'تم الحفظ': '已保存', 'تم تحديث الصلاحية': '权限已更新', 'تم حفظ التقييم': '评价已保存',
+  'تم حفظ الشرح': '教程已保存', 'تم حفظ الشفتة': '班次已保存', 'تمت الإضافة': '已添加',
+  'تم حفظ رقم الهاتف': '电话号码已保存',
+  'تم تسجيل الخبطة وخصم المواد من المخزن': '混料已登记，材料已从仓库扣除',
+  'لا توجد شفتات مسجلة اليوم.': '今天没有登记班次。', 'لا توجد شفتات مسجلة بهذا اليوم.': '这一天没有登记班次。',
+  'لا توجد أقسام متاحة لصلاحيتك.': '您的权限下没有可用模块。', 'لا توجد بيانات بعد.': '暂无数据。',
+  'لا توجد شروحات بعد.': '暂无教程。', 'لا توجد قوالب بعد.': '暂无模具。', 'لا توجد مكائن بعد.': '暂无机器。',
+  'لا توجد مواد مخبوطة اليوم.': '今天没有混料材料。', 'لا يوجد عمال مسجلون بعد.': '暂无登记工人。',
+  'لا يوجد مستخدمون بعد.': '暂无用户。',
+  'لا توجد مواد بالمخزن بعد. أضيفيها من قسم مخزن الحبيبات أولاً.': '仓库中暂无材料，请先在颗粒仓库中添加。',
+  'لا توجد قراءات سابقة لهذه المكينة': '该机器没有之前的读数',
+  'القراءة أقل من آخر قراءة مسجلة لهذه المكينة. متأكدة من الرقم؟': '读数低于该机器最后登记的读数，确定数字正确吗？',
+  'هذه الشفتة مسجلة مسبقاً لهذه المكينة في نفس اليوم': '该机器当天已登记过此班次',
+  'هل أنتِ متأكدة من حذف هذه الشفتة؟': '确定要删除此班次吗？',
+  'متأكدة تبين تحذفين هذا الشرح؟': '确定要删除此教程吗？',
+  'متأكدة تبين تحذفين هذا القالب؟': '确定要删除此模具吗？',
+  'متأكدة تبين تحذفين هذي المكينة؟': '确定要删除此机器吗？',
+  'متأكدة تبين تحذفين؟': '确定要删除吗？',
+  'أدخلي الاسم أولاً': '请先输入名称', 'أدخلي اسم العامل': '请输入工人姓名',
+  'أدخلي عنوان الشرح': '请输入教程标题', 'أدخلي قراءة العداد كرقم صحيح': '请输入正确的读数',
+  'اكتبي رقم القالب واسمه': '请输入模具编号和名称', 'اكتبي رقم المكينة واسمها': '请输入机器编号和名称',
+  'قوة الحقن لازم تكون رقم': '注射力必须是数字',
+  'عدد التجاويف والقطع لكل دورة لازم تكون أرقام أكبر من صفر': '型腔数和每模件数必须大于零',
+  'رقم القالب هذا مستعمل لقالب ثاني': '该模具编号已被其他模具使用',
+  'رقم المكينة هذا مستعمل لمكينة ثانية': '该机器编号已被其他机器使用',
+  'كمية التلف رقم صحيح لا يقل عن صفر': '废品数量必须是不小于零的整数',
+  'اختاري الشفت': '选择班次', 'اختاري العامل': '选择工人', 'اختاري المكينة': '选择机器',
+  'اختاري المادة واكتبي وزنها بالكيلوغرام': '请选择材料并填写重量（公斤）',
+  '— اختاري المادة —': '— 选择材料 —', '— اختاري المكينة —': '— 选择机器 —',
+  'أضيفي عمال أولاً': '请先添加工人', '— بدون —': '— 无 —',
+  'بدون تفاصيل': '无详情', 'بدون نوع منتج': '无产品类型',
+  'ضيفي رابط أو ارفعي فيديو': '请添加链接或上传视频',
+  'يجب أن يبدأ الرابط بـ https://': '链接必须以 https:// 开头', 'فتح الرابط': '打开链接',
+  'ما في مكائن بعد. أضيفيها من قسم المكائن.': '暂无机器，请先在机器模块中添加。',
+  'أدخلي الكمية ووزن الكيس': '请输入数量和袋重', 'أول قراءة': '首次读数', 'لا توجد صورة': '无图片',
+  '+ أضيفي صورة القالب': '+ 添加模具图片', '+ أضيفي صورة المكينة': '+ 添加机器图片',
+  'اسم المكينة وصورتها وتفاصيلها.': '机器名称、图片和详情。',
+  'اسم القالب وصورته ونوع المنتج (مبردة، غسالة، تدفئة).': '模具名称、图片和产品类型（冷藏、洗衣机、加热）。',
+  'إنتاج اليوم والتاريخ.': '今日产量和日期。',
+  'قراءة العداد والتلف لكل شفتة، والصافي يُحسب تلقائياً.': '每班读数和废品，净产量自动计算。',
+  'أسماء العمال والتقييم اليومي والتقرير الأسبوعي.': '工人姓名、每日评价和周报。',
+  'فيديوهات الشرح عن القوالب والخبط.': '关于模具和混料的教学视频。',
+  'تحسب عدد الأكياس حسب الكمية ووزن الكيس.': '按数量和单袋重量计算袋数。',
+  'تسجيل الخبطة وأنواع الحبيبات والبلاستيك المعاد تدويره.': '登记混料、颗粒种类和再生塑料。',
+  'رصيد الحبيبات والأصباغ، ويُخصم منه تلقائياً عند الخبط.': '颗粒和色母库存，混料时自动扣除。',
+  'الإجمالي:': '合计：', 'إجمالي الخبطة': '混料总量', 'كغم صافي': '净公斤',
+  'التاريخ': '日期', 'الشفت': '班次', 'الشفتة': '班次', 'صباحي': '早班', 'مسائي': '晚班', 'ليلي': '夜班',
+  'المكينة': '机器', 'القالب': '模具', 'القالب (إذا الشرح عنه)': '模具（如教程涉及）',
+  'القراءة': '读数', 'قراءة العداد عند نهاية الشفتة': '班次结束时的计数读数',
+  'كمية التلف': '废品数量', 'التلف': '废品', 'التلف اليوم (كغم)': '今日废品（公斤）',
+  'الصافي': '净产量', 'الصافي اليوم (كغم)': '今日净产量（公斤）',
+  'الكمية المطلوبة (كغم)': '所需数量（公斤）', 'وزن الكيس الواحد (كغم)': '单袋重量（公斤）',
+  'الوزن (كغم)': '重量（公斤）', 'الوزن بالكيلوغرام': '重量（公斤）', 'اسم العامل': '工人姓名',
+  'النوع': '类型', 'الحالة': '状态', 'تعمل': '运行', 'متوقفة': '停机', 'متوقف': '停机',
+  'صيانة': '维护', 'قيد الصيانة': '维护中', 'جاهز': '就绪',
+  'المشغل': '操作员', 'الموقع': '位置', 'الموديل': '型号', 'الشركة المصنعة': '制造商',
+  'قوة الحقن (طن)': '注射力（吨）', 'قوة الحقن': '注射力', 'تاريخ دخول الخدمة': '投入使用日期',
+  'دخول الخدمة': '投入使用', 'ملاحظات': '备注', 'ملاحظة (اختياري)': '备注（可选）',
+  'ملاحظة (اختيارية)': '备注（可选）', 'اسم المكينة': '机器名称', 'اسم المكينة *': '机器名称 *',
+  'رقم المكينة *': '机器编号 *', 'اسم القالب': '模具名称', 'اسم القالب *': '模具名称 *',
+  'رقم القالب *': '模具编号 *', 'اسم القطعة': '产品名称', 'نوع القطعة': '产品类型',
+  'عدد التجاويف': '型腔数', 'القطع لكل دورة': '每模件数', 'التصنيف': '分类',
+  'غير مصنف': '未分类', 'مصنف': '已分类', 'المكائن المتوافقة': '适用机器', 'المكائن المتوافقة:': '适用机器：',
+  'المكائن اليوم': '今日机器', 'تفاصيل المكينة': '机器详情', 'المنتجات اللي يسويها القالب': '模具生产的产品',
+  'مبردة': '冷藏', 'غسالة': '洗衣机', 'تدفئة': '加热',
+  '+ إضافة مكينة': '+ 添加机器', '+ إضافة قالب': '+ 添加模具', '+ إضافة صبغ': '+ 添加色母',
+  '+ إضافة مادة تقوية': '+ 添加增强材料', '+ إضافة نوع حبيبات': '+ 添加颗粒类型',
+  'إضافة قالب': '添加模具', 'إضافة مكينة': '添加机器', 'تعديل قالب': '编辑模具', 'تعديل مكينة': '编辑机器',
+  'تسجيل شفتة': '登记班次', 'حفظ الشفتة': '保存班次', 'حفظ الشرح': '保存教程',
+  'حفظ التقييم': '保存评价', 'حفظ الخبطة': '保存混料', 'إضافة شرح': '添加教程', 'إضافة عامل': '添加工人',
+  'عنوان الشرح': '教程标题', 'رابط الفيديو (يوتيوب أو غيره)': '视频链接（YouTube 或其他）',
+  'قائمة العمال': '工人名单', 'اسم': '姓名', 'الاسم': '姓名', 'الهاتف': '电话', 'الصلاحية': '权限',
+  'البريد': '邮箱', 'العامل': '工人', 'العمال والتقييم': '工人与评价', 'أيام التقييم': '评价日',
+  'التقييم اليومي': '每日评价', 'التقييم من 10': '评分（满分10）',
+  'أي يوم من الأسبوع:': '选择一周中的某天：', 'الأعلى تقييماً هذا الأسبوع': '本周评分最高',
+  'التقرير الأسبوعي (الأسبوع يبدأ السبت)': '周报（周六开始）', 'المتوسط': '平均',
+  'عرض تاريخ:': '显示日期：', 'السجل (آخر 14 يوم، الأحدث أولاً)': '记录（最近14天，最新在前）',
+  'شفتات اليوم': '今日班次', 'شفتات مسجلة اليوم': '今日登记班次',
+  'المخبوط اليوم (كغم)': '今日混料（公斤）', 'المواد المخبوطة اليوم': '今日混料材料',
+  'خبط': '混料', 'حبيبات': '颗粒', 'أصباغ': '色母', 'التقوية': '增强材料', 'آخر الخبطات': '最近混料',
+  'الحبيبات': '颗粒', 'الأصباغ': '色母', 'الأقسام ': '模块', 'تحتاجين': '需要',
+  'الإجمالي: 0 كغم': '合计：0 公斤', 'مكينة': '机器', 'قالب': '模具', 'إيقاف': '停止',
+  'اسم مادة التقوية': '增强材料名称', 'الخبط ': '混料',
+  'رقم القالب': '模具编号', 'رقم المكينة': '机器编号', 'الموديل ': '型号',
+  'تاريخ': '日期', 'ملاحظات ': '备注', 'اختر': '选择', 'عدد': '数量', '—': '—',
+};
+const ZH_PATTERNS = [
+  [/^أهلاً (.+)$/, '你好，$1'],
+  [/^هذا القسم يُبنى في المرحلة (\d+)$/, '该模块将在第 $1 阶段建设'],
+  [/^الإجمالي: (.+) كغم$/, '合计：$1 公斤'],
+  [/^(.+) كغم$/, '$1 公斤'],
+  [/^الإجمالي: (.+)$/, '合计：$1'],
+];
+function zhText(raw) {
+  const key = raw.trim();
+  if (!key) return raw;
+  if (Object.prototype.hasOwnProperty.call(ZH, key)) return raw.replace(key, () => ZH[key]);
+  for (const [re, rep] of ZH_PATTERNS) {
+    if (re.test(key)) { const out = key.replace(re, rep); return raw.replace(key, () => out); }
+  }
+  return raw;
+}
+// text for alert()/confirm() messages
+function trMsg(s) { return LANG === 'zh' ? zhText(String(s)).trim() : String(s); }
+function zhApply(node) {
+  if (LANG !== 'zh' || !node) return;
+  if (node.nodeType === 3) {
+    const v = zhText(node.nodeValue);
+    if (v !== node.nodeValue) node.nodeValue = v;
+    return;
+  }
+  if (node.nodeType !== 1) return;
+  const walker = document.createTreeWalker(node, NodeFilter.SHOW_TEXT);
+  const texts = [];
+  while (walker.nextNode()) texts.push(walker.currentNode);
+  texts.forEach(t => {
+    const tag = t.parentNode && t.parentNode.nodeName;
+    if (tag === 'SCRIPT' || tag === 'STYLE') return;
+    const v = zhText(t.nodeValue);
+    if (v !== t.nodeValue) t.nodeValue = v;
+  });
+  const els = [node, ...node.querySelectorAll('[placeholder],[aria-label],[title]')];
+  els.forEach(el => {
+    if (!el.getAttribute) return;
+    ['placeholder', 'aria-label', 'title'].forEach(a => {
+      const val = el.getAttribute(a);
+      if (val) { const v = zhText(val); if (v !== val) el.setAttribute(a, v); }
+    });
+  });
+}
+if (LANG === 'zh') {
+  const _alert = window.alert.bind(window);
+  const _confirm = window.confirm.bind(window);
+  window.alert = m => _alert(trMsg(m));
+  window.confirm = m => _confirm(trMsg(m));
+  const startZh = () => {
+    zhApply(document.body);
+    new MutationObserver(muts => {
+      for (const m of muts) {
+        if (m.type === 'childList') m.addedNodes.forEach(n => zhApply(n));
+        else zhApply(m.target);
+      }
+    }).observe(document.body, {
+      childList: true, subtree: true, characterData: true,
+      attributes: true, attributeFilter: ['placeholder', 'aria-label', 'title'],
+    });
+  };
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', startZh);
+  else startZh();
+}
+
 function esc(s) {
   return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
@@ -533,7 +737,7 @@ function renderPage() {
 function fmtDate(dateStr) {
   if (!dateStr) return '';
   const d = new Date(dateStr + 'T12:00:00Z');
-  return d.toLocaleDateString('ar-u-nu-latn', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' });
+  return d.toLocaleDateString(LANG === 'zh' ? 'zh-CN' : 'ar-u-nu-latn', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' });
 }
 function decorateDates(root) {
   root.querySelectorAll('input[type="date"]').forEach(inp => {
@@ -1710,15 +1914,6 @@ function mixRowHTML(kind) {
     </div>`;
 }
 
-function reinfRowHTML() {
-  return `<div class="mixRow">
-      <input class="rfName" placeholder="اسم مادة التقوية" autocomplete="off" aria-label="اسم مادة التقوية">
-      <input class="mxKg" inputmode="decimal" placeholder="الوزن (كغم)" autocomplete="off" aria-label="الوزن بالكيلوغرام">
-      <div class="rowTotal">الإجمالي: 0 كغم</div>
-      <button class="trash" type="button">حذف السطر</button>
-    </div>`;
-}
-
 // kg for one line, or NaN when the weight is missing
 function mixRowKg(row) {
   const kg = parseQty(row.querySelector('.mxKg').value);
@@ -1749,7 +1944,7 @@ function resetMixRows() {
   ['grRows', 'pgRows', 'tqRows'].forEach(id => { document.getElementById(id).innerHTML = ''; });
   addMixRow('grRows', mixRowHTML('حبيبات'));
   addMixRow('pgRows', mixRowHTML('أصباغ'));
-  addMixRow('tqRows', reinfRowHTML());
+  addMixRow('tqRows', mixRowHTML('التقوية'));
 }
 
 async function renderMixing() {
@@ -1799,7 +1994,7 @@ async function renderMixing() {
 
   document.getElementById('grAdd').addEventListener('click', () => addMixRow('grRows', mixRowHTML('حبيبات')));
   document.getElementById('pgAdd').addEventListener('click', () => addMixRow('pgRows', mixRowHTML('أصباغ')));
-  document.getElementById('tqAdd').addEventListener('click', () => addMixRow('tqRows', reinfRowHTML()));
+  document.getElementById('tqAdd').addEventListener('click', () => addMixRow('tqRows', mixRowHTML('التقوية')));
   const form = document.getElementById('mixForm');
   form.addEventListener('submit', saveMix);
   form.addEventListener('input', refreshMixTotals);
@@ -1815,7 +2010,7 @@ async function saveMix(e) {
 
   // granules and pigments go to the warehouse and are deducted
   const items = [];
-  for (const row of document.querySelectorAll('#grRows .mixRow, #pgRows .mixRow')) {
+  for (const row of document.querySelectorAll('#grRows .mixRow, #pgRows .mixRow, #tqRows .mixRow')) {
     const mid = row.querySelector('.mxMat').value;
     const raw = row.querySelector('.mxKg').value.trim();
     if (!mid && !raw) continue; // empty line
@@ -1828,20 +2023,7 @@ async function saveMix(e) {
   }
   if (!items.length) { setMsg(msg, 'أضيفي مادة واحدة على الأقل من الحبيبات أو الأصباغ'); return; }
 
-  // reinforcement is written in the note
   const reinf = [];
-  for (const row of document.querySelectorAll('#tqRows .mixRow')) {
-    const name = row.querySelector('.rfName').value.trim();
-    const raw = row.querySelector('.mxKg').value.trim();
-    if (!name && !raw) continue;
-    const kg = mixRowKg(row);
-    if (!name || !Number.isFinite(kg)) {
-      setMsg(msg, 'اكتبي اسم مادة التقوية ووزنها بالكيلوغرام');
-      return;
-    }
-    reinf.push('التقوية: ' + name + ' — ' + fmtKg(kg) + ' كغم');
-  }
-
   const worker = document.getElementById('mxWorker').value.trim();
   const note = [document.getElementById('mxNote').value.trim(), ...reinf].filter(Boolean).join(' — ');
   btn.disabled = true; btn.textContent = 'جاري الحفظ...';
@@ -2048,6 +2230,14 @@ function notifyStaff(title, body) {
   sb.functions.invoke('notify', { body: { title, body, url: './' } }).catch(() => {});
 }
 document.getElementById('notifyBtn').addEventListener('click', enableNotifications);
+
+/* ---- Language switch: reloads the page in the other language ---- */
+const langBtn = document.getElementById('langBtn');
+langBtn.textContent = LANG === 'zh' ? 'العربية' : '中文';
+langBtn.addEventListener('click', () => {
+  try { localStorage.setItem('lang', LANG === 'zh' ? 'ar' : 'zh'); } catch (_) { /* private mode */ }
+  location.reload();
+});
 
 /* ---- Drawer: edit own phone number ---- */
 document.getElementById('phoneEdit').addEventListener('click', () => {
