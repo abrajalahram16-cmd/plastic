@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>معمل البلاستيك</title>
-<meta name="theme-color" content="#2b3361">
+<meta name="theme-color" content="#1c3d7a">
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="icons/icon-192.png" type="image/png">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
@@ -96,11 +96,11 @@ td select{width:auto;min-width:150px;padding:8px 10px}
 
 /* ===== Visual theme (pastel cards, round icons, bottom bar) ===== */
 :root{
-  --navy:#2b3361;--navy2:#20274d;--gold:#ef8a6a;
-  --bg:#f6e9e6;--card:#ffffff;--border:#f1e7ea;--text:#2b2e40;--muted:#8b8698;
+  --navy:#1c3d7a;--navy2:#142c5c;--gold:#3a68c4;
+  --bg:#eef3fb;--card:#ffffff;--border:#f1e7ea;--text:#2b2e40;--muted:#8b8698;
   --radius:22px;--shadow:0 10px 26px rgba(80,50,90,.08);
 }
-body{background:linear-gradient(170deg,#f9e3df 0%,#f4e8f1 50%,#e8e6f5 100%) fixed;background-color:#f6e9e6}
+body{background:linear-gradient(170deg,#f5f8fd 0%,#e6eefa 100%) fixed;background-color:#eef3fb}
 main{padding:18px 16px 120px}
 .topbar{background:transparent;color:var(--navy);padding:18px 18px 6px;position:static}
 .brand{font-size:20px;color:var(--navy)}
@@ -127,7 +127,7 @@ label{color:#4b4f63}
 .ico{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;display:block}
 
 /* home */
-.hero{background:linear-gradient(135deg,#f9c3ac 0%,#f0937a 55%,#e8789f 100%);color:#fff;border-radius:28px;padding:22px 20px;box-shadow:0 14px 30px rgba(232,120,110,.28);margin-bottom:16px;position:relative;overflow:hidden}
+.hero{background:linear-gradient(135deg,#142c5c 0%,#1c3d7a 50%,#3a68c4 100%);color:#fff;border-radius:28px;padding:22px 20px;box-shadow:0 14px 30px rgba(28,61,122,.30);margin-bottom:16px;position:relative;overflow:hidden}
 .hero small{opacity:.92;font-size:13px}
 .hero h1{font-size:24px;margin:4px 0 14px}
 .hero .big{font-size:34px;font-weight:800;line-height:1.1}
@@ -138,7 +138,7 @@ label{color:#4b4f63}
 .tile span{font-size:12px;color:var(--muted)}
 .ico-circle{width:42px;height:42px;border-radius:50%;display:grid;place-items:center}
 .ico-circle .ico{width:20px;height:20px}
-.tone-1{background:#fde3d6;color:#e0704f}
+.tone-1{background:#dce8fb;color:#1c3d7a}
 .tone-2{background:#dcf1e7;color:#2f9e7a}
 .tone-3{background:#e6e1fa;color:#6b5bc9}
 .tone-4{background:#d9ecf9;color:#2f7fb8}
@@ -149,7 +149,7 @@ label{color:#4b4f63}
 .mach .val{font-size:22px;font-weight:800;color:var(--navy)}
 .mach .sub2{font-size:12px;color:var(--muted);margin-top:4px}
 .bar{height:8px;background:#f3ecf0;border-radius:99px;overflow:hidden;margin-top:10px}
-.bar i{display:block;height:100%;background:linear-gradient(90deg,#f3a48c,#e8789f);border-radius:99px}
+.bar i{display:block;height:100%;background:linear-gradient(90deg,#3a68c4,#6f9ce0);border-radius:99px}
 .hist{width:100%;border-collapse:separate;border-spacing:0 8px}
 .hist td{background:#fff;border:0;padding:12px 10px}
 .hist tr td:first-child{border-radius:16px 0 0 16px}
@@ -158,9 +158,10 @@ label{color:#4b4f63}
 .dlabel{font-size:12px;color:var(--navy);font-weight:700;margin-top:4px}
 .login-wrap{background:transparent}
 .login-card{border:0;border-radius:28px;box-shadow:0 18px 40px rgba(80,50,90,.12);max-width:400px;padding:30px 24px}
-.logo-circle{width:64px;height:64px;border-radius:50%;background:linear-gradient(135deg,#f9c3ac,#e8789f);margin:0 auto 12px;display:grid;place-items:center;color:#fff}
+.logo-circle{width:64px;height:64px;border-radius:50%;background:linear-gradient(135deg,#1c3d7a,#3a68c4);margin:0 auto 12px;display:grid;place-items:center;color:#fff}
 .logo-circle .ico,.logo-circle svg{width:30px;height:30px;fill:none;stroke:#fff;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .link-btn{background:none;border:0;color:var(--navy);font-weight:700;margin-top:14px;width:100%;cursor:pointer;font-size:14px;min-height:40px}
+.link-btn.signup-cta{background:#e4edfb;color:var(--navy);border:1.5px solid #3a68c4;border-radius:16px;min-height:50px;font-size:15px;font-weight:800;margin-top:16px}
 .login-card .btn{margin-top:18px}
 .hidden{display:none !important}
 .brand{display:flex;align-items:center;gap:10px;font-size:19px}
@@ -179,7 +180,7 @@ label{color:#4b4f63}
 .drawer{position:fixed;top:0;bottom:0;right:0;width:min(320px,86vw);background:#fff;z-index:50;transform:translateX(105%);transition:transform .28s ease;box-shadow:-10px 0 30px rgba(60,40,80,.18);border-radius:26px 0 0 26px;padding:22px 18px;display:flex;flex-direction:column;gap:14px;overflow-y:auto}
 .drawer.open{transform:translateX(0)}
 .drawer-head{display:flex;align-items:center;justify-content:space-between}
-.avatar{width:58px;height:58px;border-radius:50%;background:linear-gradient(135deg,#f9c3ac,#e8789f);color:#fff;display:grid;place-items:center;font-size:24px;font-weight:800}
+.avatar{width:58px;height:58px;border-radius:50%;background:linear-gradient(135deg,#1c3d7a,#3a68c4);color:#fff;display:grid;place-items:center;font-size:24px;font-weight:800}
 .close-btn{background:#f6f1f4;border:0;width:40px;height:40px;border-radius:12px;font-size:16px;cursor:pointer;color:var(--navy)}
 .drawer-name{font-size:18px;font-weight:800;color:var(--navy)}
 .drawer-rows{background:#faf6f8;border-radius:18px;padding:4px 14px}
@@ -200,11 +201,9 @@ main{padding-bottom:40px}
 .mix-cols{display:grid;grid-template-columns:1fr 1fr;gap:10px;align-items:start}
 .mix-cols .card{margin:0;padding:12px}
 .mix-cols .card h3{font-size:15px}
-.mix-cols .bagsRow{grid-template-columns:1fr;gap:6px}
 .mix-cols input,.mix-cols select{font-size:14px;padding:10px 10px;min-height:42px}
 .mix-cols .mixRow{padding:10px;margin-top:8px}
 .mix-cols .btn{font-size:13px;padding:8px 10px;width:100%}
-.bagsRow{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .mixRow{background:#faf6f8;border-radius:16px;padding:12px;margin-top:10px;display:flex;flex-direction:column;gap:8px}
 .rowTotal{font-size:13px;font-weight:700;color:var(--navy)}
 </style>
@@ -237,7 +236,7 @@ main{padding-bottom:40px}
       <button id="loginBtn" class="btn btn-primary" type="submit">دخول</button>
       <div id="loginMsg" class="msg err"></div>
     </form>
-    <button id="authToggle" class="link-btn" type="button">ما عندك حساب؟ أنشئي حساب جديد</button>
+    <button id="authToggle" class="link-btn signup-cta" type="button">ما عندك حساب؟ أنشئي حساب جديد</button>
   </div>
 </div>
 
@@ -1259,31 +1258,29 @@ function materialOptions(list) {
 }
 
 /* ---- Mixing page ----
-   Granules and pigments: each line is type + number of bags + weight per bag -> kg.
-   Reinforcement (التقوية): each line is a warehouse material + kg, deducted from stock. */
-function mixRowHTML(mode, kind) {
+   Granules and pigments: a warehouse material + weight in kg.
+   Reinforcement (التقوية): a name + weight in kg, saved in the batch note. */
+function mixRowHTML(kind) {
   const opts = materialOptions((state.stock || []).filter(m => m.kind === kind));
-  const fields = mode === 'bags'
-    ? `<div class="bagsRow">
-         <input class="mxBags" inputmode="numeric" placeholder="عدد الكياس" autocomplete="off" aria-label="عدد الكياس">
-         <input class="mxBagW" inputmode="decimal" placeholder="وزن الكيس (كغم)" autocomplete="off" aria-label="وزن الكيس بالكيلوغرام">
-       </div>`
-    : `<input class="mxKg" inputmode="decimal" placeholder="الكمية (كغم)" autocomplete="off" aria-label="الكمية بالكيلوغرام">`;
-  return `<div class="mixRow" data-mode="${mode}">
+  return `<div class="mixRow">
       <select class="mxMat" aria-label="${esc(kind)}">${opts}</select>
-      ${fields}
+      <input class="mxKg" inputmode="decimal" placeholder="الوزن (كغم)" autocomplete="off" aria-label="الوزن بالكيلوغرام">
       <div class="rowTotal">الإجمالي: 0 كغم</div>
       <button class="trash" type="button">حذف السطر</button>
     </div>`;
 }
 
-// kg for one line, or NaN when the line is not complete
+function reinfRowHTML() {
+  return `<div class="mixRow">
+      <input class="rfName" placeholder="اسم مادة التقوية" autocomplete="off" aria-label="اسم مادة التقوية">
+      <input class="mxKg" inputmode="decimal" placeholder="الوزن (كغم)" autocomplete="off" aria-label="الوزن بالكيلوغرام">
+      <div class="rowTotal">الإجمالي: 0 كغم</div>
+      <button class="trash" type="button">حذف السطر</button>
+    </div>`;
+}
+
+// kg for one line, or NaN when the weight is missing
 function mixRowKg(row) {
-  if (row.dataset.mode === 'bags') {
-    const bags = toInt(row.querySelector('.mxBags').value);
-    const w = parseQty(row.querySelector('.mxBagW').value);
-    return (Number.isInteger(bags) && bags > 0 && w > 0) ? bags * w : NaN;
-  }
   const kg = parseQty(row.querySelector('.mxKg').value);
   return kg > 0 ? kg : NaN;
 }
@@ -1299,9 +1296,9 @@ function refreshMixTotals() {
   document.getElementById('mxGrand').innerHTML = `<b>إجمالي الخبطة</b><span>${fmtKg(grand)} كغم</span>`;
 }
 
-function addMixRow(boxId, kind, mode) {
+function addMixRow(boxId, html) {
   const wrap = document.createElement('div');
-  wrap.innerHTML = mixRowHTML(mode, kind);
+  wrap.innerHTML = html;
   const row = wrap.firstElementChild;
   row.querySelector('.trash').addEventListener('click', () => { row.remove(); refreshMixTotals(); });
   document.getElementById(boxId).appendChild(row);
@@ -1310,9 +1307,9 @@ function addMixRow(boxId, kind, mode) {
 
 function resetMixRows() {
   ['grRows', 'pgRows', 'tqRows'].forEach(id => { document.getElementById(id).innerHTML = ''; });
-  addMixRow('grRows', 'حبيبات', 'bags');
-  addMixRow('pgRows', 'أصباغ', 'bags');
-  addMixRow('tqRows', 'التقوية', 'kg');
+  addMixRow('grRows', mixRowHTML('حبيبات'));
+  addMixRow('pgRows', mixRowHTML('أصباغ'));
+  addMixRow('tqRows', reinfRowHTML());
 }
 
 async function renderMixing() {
@@ -1360,9 +1357,9 @@ async function renderMixing() {
     setMsg(document.getElementById('mxMsg'), 'لا توجد مواد بالمخزن بعد. أضيفيها من قسم مخزن الحبيبات أولاً.');
   }
 
-  document.getElementById('grAdd').addEventListener('click', () => addMixRow('grRows', 'حبيبات', 'bags'));
-  document.getElementById('pgAdd').addEventListener('click', () => addMixRow('pgRows', 'أصباغ', 'bags'));
-  document.getElementById('tqAdd').addEventListener('click', () => addMixRow('tqRows', 'التقوية', 'kg'));
+  document.getElementById('grAdd').addEventListener('click', () => addMixRow('grRows', mixRowHTML('حبيبات')));
+  document.getElementById('pgAdd').addEventListener('click', () => addMixRow('pgRows', mixRowHTML('أصباغ')));
+  document.getElementById('tqAdd').addEventListener('click', () => addMixRow('tqRows', reinfRowHTML()));
   const form = document.getElementById('mixForm');
   form.addEventListener('submit', saveMix);
   form.addEventListener('input', refreshMixTotals);
@@ -1376,28 +1373,42 @@ async function saveMix(e) {
   const msg = document.getElementById('mxMsg');
   setMsg(msg, '', '');
 
-  const rows = [...document.querySelectorAll('#grRows .mixRow, #pgRows .mixRow, #tqRows .mixRow')];
-
+  // granules and pigments go to the warehouse and are deducted
   const items = [];
-  for (const row of rows) {
+  for (const row of document.querySelectorAll('#grRows .mixRow, #pgRows .mixRow')) {
     const mid = row.querySelector('.mxMat').value;
-    const filled = mid || [...row.querySelectorAll('input')].some(i => i.value.trim() !== '');
-    if (!filled) continue; // empty line, skip it
+    const raw = row.querySelector('.mxKg').value.trim();
+    if (!mid && !raw) continue; // empty line
     const kg = mixRowKg(row);
     if (!mid || !Number.isFinite(kg)) {
-      setMsg(msg, 'أكملي بيانات كل سطر: المادة وعدد الكياس ووزن الكيس، أو المادة والكمية بالكيلوغرام');
+      setMsg(msg, 'اختاري المادة واكتبي وزنها بالكيلوغرام');
       return;
     }
     items.push({ material_id: mid, qty: Math.round(kg * 1000) / 1000 });
   }
-  if (!items.length) { setMsg(msg, 'أضيفي مادة واحدة على الأقل'); return; }
+  if (!items.length) { setMsg(msg, 'أضيفي مادة واحدة على الأقل من الحبيبات أو الأصباغ'); return; }
+
+  // reinforcement is written in the note
+  const reinf = [];
+  for (const row of document.querySelectorAll('#tqRows .mixRow')) {
+    const name = row.querySelector('.rfName').value.trim();
+    const raw = row.querySelector('.mxKg').value.trim();
+    if (!name && !raw) continue;
+    const kg = mixRowKg(row);
+    if (!name || !Number.isFinite(kg)) {
+      setMsg(msg, 'اكتبي اسم مادة التقوية ووزنها بالكيلوغرام');
+      return;
+    }
+    reinf.push('التقوية: ' + name + ' — ' + fmtKg(kg) + ' كغم');
+  }
 
   const worker = document.getElementById('mxWorker').value.trim();
+  const note = [document.getElementById('mxNote').value.trim(), ...reinf].filter(Boolean).join(' — ');
   btn.disabled = true; btn.textContent = 'جاري الحفظ...';
   const { error } = await sb.rpc('create_mix_batch', {
     p_date: document.getElementById('mxDate').value,
     p_worker: worker,
-    p_note: document.getElementById('mxNote').value.trim(),
+    p_note: note,
     p_items: items,
   });
   btn.disabled = false; btn.textContent = 'حفظ الخبطة';
